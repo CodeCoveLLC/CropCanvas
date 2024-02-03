@@ -16,7 +16,7 @@ class ShopController: RouteCollection {
         shop.get("seeds", use: getShopSeeds)
     }
     
-    func getShopPlots(_ req: Request) async throws -> Response {
+    private func getShopPlots(_ req: Request) async throws -> ShopInventoryResponse<Shop.Plot> {
         let profile = try await req.getProfile(with: { query in
             query.with(\.$plots)
         })
@@ -27,21 +27,21 @@ class ShopController: RouteCollection {
             }
         }
         
-        return try await ShopInventoryResponse(
+        return ShopInventoryResponse(
             balance: profile.balance,
             numberOfItems: potentialItems.count,
             items: potentialItems
-        ).encodeResponse(for: req)
+        )
     }
     
-    func getShopSeeds(_ req: Request) async throws -> Response {
+    private func getShopSeeds(_ req: Request) async throws -> ShopInventoryResponse<Shop.Seed> {
         let profile = try await req.getProfile()
         
-        return try await ShopInventoryResponse(
+        return ShopInventoryResponse(
             balance: profile.balance,
             numberOfItems: Shop.seeds.count,
             items: Shop.seeds
-        ).encodeResponse(for: req)
+        )
     }
     
     private struct ShopInventoryResponse<Product: Content>: Content {

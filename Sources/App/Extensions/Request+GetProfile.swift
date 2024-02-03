@@ -39,14 +39,15 @@ extension Request {
         return token
     }
     
-    enum ProfileTokenError: RespondableError {
+    enum ProfileTokenError: AbortError {
         case noTokenFound
         case noProfileFound
         
-        var response: Response {
+        var status: HTTPResponseStatus { .unauthorized }
+        var reason: String {
             switch self {
-                case .noTokenFound: Response(status: .unauthorized, body: "No Bearer Token Found")
-                case .noProfileFound: Response(status: .unauthorized, body: "No Profile With Matching Token Found")
+                case .noTokenFound: "No Bearer Token Found"
+                case .noProfileFound: "No Profile With Matching Token Found"
             }
         }
     }

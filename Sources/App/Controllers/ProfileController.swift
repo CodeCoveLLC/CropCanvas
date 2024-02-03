@@ -1,6 +1,6 @@
 //
 //  ProfileController.swift
-//  
+//
 //
 //  Created by Lukas Simonson on 2/3/24.
 //
@@ -15,7 +15,7 @@ class ProfileController: RouteCollection {
         profile.post(use: createProfile)
     }
     
-    func createProfile(_ req: Request) async throws -> Response {
+    private func createProfile(_ req: Request) async throws -> TokenResponse {
         let userInfo = try req.content.decode(UserPost.self)
         
         guard try await Profile.query(on: req.db)
@@ -28,12 +28,11 @@ class ProfileController: RouteCollection {
         
         try await profile.create(on: req.db)
         
-        return try await TokenResponse(token: profile.token).encodeResponse(for: req)
+        return TokenResponse(token: profile.token)
     }
     
-    func getProfile(_ req: Request) async throws -> Response {
-        let profile = try await req.getProfile()
-        return try await profile.encodeResponse(for: req)
+    private func getProfile(_ req: Request) async throws -> Profile {
+        try await req.getProfile()
     }
     
     private struct UserPost: Content {
@@ -44,12 +43,18 @@ class ProfileController: RouteCollection {
         let token: String
     }
     
-    enum ProfileError: RespondableError {
+    enum ProfileError: AbortError {
         case usernameTaken
         
-        var response: Response {
+        var reason: String {
             switch self {
-                case .usernameTaken: Response(status: .forbidden, body: "Username Already Taken")
+                case .usernameTaken: "Username Already Taken"
+            }
+        }
+        
+        var status: HTTPResponseStatus {
+            switch self {
+                case .usernameTaken: .unauthorized
             }
         }
     }
