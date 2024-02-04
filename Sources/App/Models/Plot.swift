@@ -34,3 +34,19 @@ extension Plot {
     static let sizeField: FieldKey = "size"
     static let ownerField: FieldKey = "owner_id"
 }
+
+extension Plot {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case size
+        case owner
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(size, forKey: .size)
+    }
+}

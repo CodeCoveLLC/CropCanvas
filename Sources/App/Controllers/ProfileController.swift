@@ -25,14 +25,21 @@ class ProfileController: RouteCollection {
         else { throw ProfileError.usernameTaken }
         
         let profile = Profile(id: UUID(), name: userInfo.name, money: 1000)
+        let inventory = try Inventory(ownerID: profile.requireID())
         
-        try await profile.create(on: req.db)
+        try await req.db.transaction { db in
+            try await profile.create(on: db)
+            try await inventory.create(on: db)
+        }
         
         return TokenResponse(token: profile.token)
     }
     
     private func getProfile(_ req: Request) async throws -> Profile {
-        try await req.getProfile()
+        try await req.getProfile { query in
+            query.with(\.$plots)
+                .with(\.$inventory)
+        }
     }
     
     private struct UserPost: Content {

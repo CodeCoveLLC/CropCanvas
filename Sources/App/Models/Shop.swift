@@ -10,8 +10,8 @@ import Vapor
 
 enum Shop {
     static let plots: [Plot] = [
-        Plot(name: "Moonlight Range", price: 500, size: 5),
-        Plot(name: "Green Meadows", price: 1000, size: 10)
+        Plot(id: 1, name: "Moonlight Range", price: 500, size: 5),
+        Plot(id: 2, name: "Green Meadows", price: 1000, size: 10)
     ]
     
     static let seeds: [Seed] = [
@@ -30,6 +30,7 @@ enum Shop {
 
 extension Shop {
     struct Plot: Content {
+        let id: Int
         let name: String
         let price: Int
         let size: Int

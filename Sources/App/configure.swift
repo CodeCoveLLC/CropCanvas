@@ -16,6 +16,7 @@ public func configure(_ app: Application) async throws {
     
     app.migrations.add(ProfileCreationMigration())
     app.migrations.add(PlotCreationMigration())
+    app.migrations.add(InventoryCreationMigration())
 
     // register routes
     try routes(app)

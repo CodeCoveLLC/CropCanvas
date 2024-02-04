@@ -20,6 +20,8 @@ final class Profile: Model, Content {
     var balance: Int
     @Children(for: \.$owner)
     var plots: [Plot]
+    @OptionalChild(for: \.$owner)
+    var inventory: Inventory?
     
     init() {}
     
@@ -44,6 +46,8 @@ extension Profile {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
         try container.encode(balance, forKey: .money)
+        try container.encode(plots, forKey: .plots)
+        try container.encodeIfPresent(inventory, forKey: .inventory)
     }
     
     enum CodingKeys: String, CodingKey {
@@ -51,5 +55,7 @@ extension Profile {
         case token
         case name
         case money
+        case plots
+        case inventory
     }
 }
