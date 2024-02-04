@@ -6,7 +6,7 @@
 //
 
 import Vapor
-
+import Foundation
 
 class PlotsController: RouteCollection {
     
@@ -25,8 +25,58 @@ class PlotsController: RouteCollection {
         return profile.plots
     }
     
-    private func plantSeeds(_ req: Request) async throws -> Response {
-        return Response(status: .notImplemented)
+    private func plantSeeds(_ req: Request) async throws -> Plot.Plant {
+        let plotID = req.parameters.get("plot_id", as: UUID.self)
+        let plantRequest = try req.content.decode(PlantRequestBody.self)
+        
+        let profile = try await req.getProfile { query in
+            query.with(\.$plots)
+                .with(\.$inventory)
+        }
+        
+        guard let inventory = profile.inventory
+        else { throw ServerError.unknownError }
+        
+        guard let plot = profile.plots.first(where: { $0.id == plotID })
+        else { throw PlotError.invalidPlot }
+        
+        guard plot.plant == nil
+        else { throw PlotError.plotBeingUsed }
+        
+        guard plot.size <= plantRequest.amount
+        else { throw PlotError.tooManySeeds(plotSize: plot.size, requsted: plantRequest.amount) }
+        
+        guard plantRequest.amount > 0,
+              let shopPlant = Shop.seeds.first(where: { $0.name == plantRequest.name })
+        else { throw PlotError.invalidSeedRequest }
+        
+        let inventorySeeds = inventory.seeds.first(where: { $0.name == plantRequest.name })
+        guard let inventorySeeds,
+              inventorySeeds.amount >= plantRequest.amount
+        else { throw PlotError.notEnoughSeeds(requested: plantRequest.amount, owned: inventorySeeds?.amount ?? 0) }
+        
+        plot.plant = Plot.Plant(
+            name: shopPlant.name,
+            amount: plantRequest.amount,
+            plantedDate: .now,
+            maturationDate: .now.addingTimeInterval(Double(shopPlant.growthDurationSeconds))
+        )
+        
+        if inventorySeeds.amount > plantRequest.amount {
+            inventory.seeds.update(with: Inventory.Seed(name: inventorySeeds.name, amount: inventorySeeds.amount - plantRequest.amount, growthDurationSeconds: inventorySeeds.growthDurationSeconds))
+        } else {
+            inventory.seeds.remove(inventorySeeds)
+        }
+        
+        try await req.db.transaction { db in
+            try await inventory.update(on: db)
+            try await plot.update(on: db)
+        }
+            
+        guard let plant = plot.plant
+        else { throw ServerError.unknownError }
+        
+        return plant
     }
     
     private func harvestPlot(_ req: Request) async throws -> Response {
@@ -36,5 +86,25 @@ class PlotsController: RouteCollection {
     private struct PlantRequestBody: Content {
         let name: String
         let amount: Int
+    }
+    
+    private enum PlotError: AbortError {
+        case invalidPlot
+        case plotBeingUsed
+        case invalidSeedRequest
+        case notEnoughSeeds(requested: Int, owned: Int)
+        case tooManySeeds(plotSize: Int, requsted: Int)
+        
+        var status: HTTPResponseStatus { .badRequest }
+        
+        var reason: String {
+            switch self {
+                case .invalidPlot: "No Plot Found With Matching ID"
+                case .plotBeingUsed: "This Plot Is Already In Use"
+                case .invalidSeedRequest: "Your Plant Request was Invalid. Check Plant Name Spelling, And That The Amount You Are Trying To Plant is Greater Than 0"
+                case .notEnoughSeeds(let requested, let owned): "You requested to use #\(requested) seeds, you only have #\(owned)"
+                case .tooManySeeds(let plotSize, let requested): "Your plot can only hold #\(plotSize) seeds, you requsted to use #\(requested)"
+            }
+        }
     }
 }

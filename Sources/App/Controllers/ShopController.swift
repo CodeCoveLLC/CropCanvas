@@ -95,7 +95,7 @@ class ShopController: RouteCollection {
         inventory.seeds.update(with: newItem)
         
         let oldBalance = profile.balance
-        profile.balance -= shopSeed.price
+        profile.balance -= (shopSeed.price * seedRequest.amount)
         
         try await req.db.transaction { db in
             try await profile.update(on: db)

@@ -15,6 +15,10 @@ final class Plot: Model, Content {
     var name: String
     @Field(key: sizeField)
     var size: Int
+    
+    @Field(key: plantField)
+    var plant: Plant?
+    
     @Parent(key: ownerField)
     var owner: Profile
     
@@ -33,6 +37,23 @@ extension Plot {
     static let nameField: FieldKey = "name"
     static let sizeField: FieldKey = "size"
     static let ownerField: FieldKey = "owner_id"
+    static let plantField: FieldKey = "plant"
+}
+
+extension Plot {
+    final class Plant: Content {
+        let name: String
+        let amount: Int
+        let plantedDate: Date
+        let maturationDate: Date
+        
+        init(name: String, amount: Int, plantedDate: Date, maturationDate: Date) {
+            self.name = name
+            self.amount = amount
+            self.plantedDate = plantedDate
+            self.maturationDate = maturationDate
+        }
+    }
 }
 
 extension Plot {
@@ -40,6 +61,7 @@ extension Plot {
         case id
         case name
         case size
+        case plant
         case owner
     }
     
@@ -48,5 +70,6 @@ extension Plot {
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encode(size, forKey: .size)
+        try container.encodeIfPresent(plant, forKey: .plant)
     }
 }

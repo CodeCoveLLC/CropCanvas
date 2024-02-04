@@ -13,6 +13,7 @@ class PlotCreationMigration: AsyncMigration {
             .id()
             .field(Plot.nameField, .string)
             .field(Plot.sizeField, .int)
+            .field(Plot.plantField, .dictionary)
             .field(Plot.ownerField, .uuid, .required, .references(Profile.schema, "id"))
             .create()
     }
