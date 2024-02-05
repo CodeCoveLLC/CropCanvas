@@ -7,17 +7,16 @@ import Vapor
 public func configure(_ app: Application) async throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
-
-    app.databases.use(DatabaseConfigurationFactory.postgres(configuration: .init(
-        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
-        port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? SQLPostgresConfiguration.ianaPortNumber,
-        username: Environment.get("DATABASE_USERNAME") ?? "vapor_username",
-        password: Environment.get("DATABASE_PASSWORD") ?? "vapor_password",
-        database: Environment.get("DATABASE_NAME") ?? "vapor_database",
-        tls: .prefer(try .init(configuration: .clientDefault)))
-    ), as: .psql)
-
-    app.migrations.add(CreateTodo())
+    
+    try app.databases.use(DatabaseConfigurationFactory.postgres(url: Environment.get("DATABASE_URL") ?? "NO DATABASE URL FOUND"), as: .psql)
+    
+    // MARK: Replaces Error Middleware | Could Cause Issues | Explore More
+    app.middleware = .init()
+    app.middleware.use(ErrorHandlingMiddleware())
+    
+    app.migrations.add(ProfileCreationMigration())
+    app.migrations.add(PlotCreationMigration())
+    app.migrations.add(InventoryCreationMigration())
 
     // register routes
     try routes(app)
