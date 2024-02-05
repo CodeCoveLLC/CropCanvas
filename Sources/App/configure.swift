@@ -8,7 +8,13 @@ public func configure(_ app: Application) async throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     
-    try app.databases.use(DatabaseConfigurationFactory.postgres(url: Environment.get("DATABASE_URL") ?? "NO DATABASE URL FOUND"), as: .psql)
+    if let url = Environment.get("DATABASE_URL") {
+        try app.databases.use(DatabaseConfigurationFactory.postgres(url: url), as: .psql)
+    } else if let url = Environment.get("DATABASE_PRIVATE_URL") {
+        var config = try SQLPostgresConfiguration(url: url)
+        config.coreConfiguration.tls = .disable
+        app.databases.use(DatabaseConfigurationFactory.postgres(configuration: config), as: .psql)
+    }
     
     // MARK: Replaces Error Middleware | Could Cause Issues | Explore More
     app.middleware = .init()
@@ -17,7 +23,8 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(ProfileCreationMigration())
     app.migrations.add(PlotCreationMigration())
     app.migrations.add(InventoryCreationMigration())
-
+    
     // register routes
     try routes(app)
 }
+
