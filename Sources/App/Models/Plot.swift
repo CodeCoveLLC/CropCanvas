@@ -54,6 +54,13 @@ extension Plot {
             self.plantedDate = plantedDate
             self.maturationDate = maturationDate
         }
+        
+        enum CodingKeys: String, CodingKey {
+            case name
+            case amount
+            case plantedDate = "planted_date"
+            case maturationDate = "maturation_date"
+        }
     }
 }
 

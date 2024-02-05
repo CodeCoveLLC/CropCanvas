@@ -50,5 +50,11 @@ extension Shop {
         let name: String
         let price: Int
         let growthDurationSeconds: Int
+        
+        enum CodingKeys: String, CodingKey {
+            case name
+            case price
+            case growthDurationSeconds = "growth_duration_seconds"
+        }
     }
 }

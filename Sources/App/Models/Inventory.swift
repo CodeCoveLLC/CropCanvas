@@ -48,6 +48,12 @@ extension Inventory {
         func hash(into hasher: inout Hasher) {
             hasher.combine(name)
         }
+        
+        enum CodingKeys: String, CodingKey {
+            case name
+            case amount
+            case growthDurationSeconds = "growth_duration_seconds"
+        }
     }
     
     struct Product: Content, Hashable {
@@ -95,6 +101,12 @@ extension Inventory {
         
         func hash(into hasher: inout Hasher) {
             hasher.combine(name)
+        }
+        
+        enum CodingKeys: String, CodingKey {
+            case name
+            case amount
+            case baseWorth = "base_worth"
         }
     }
 }
