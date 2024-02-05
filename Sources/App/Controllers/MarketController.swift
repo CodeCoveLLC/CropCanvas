@@ -13,7 +13,7 @@ class MarketController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let market = routes.grouped("market")
         market.get(use: getRates)
-        market.put("sell", use: sellProduct)
+        market.put(use: sellProduct)
     }
     
     private func getRates(_ req: Request) async throws -> [Market.ItemRate] {

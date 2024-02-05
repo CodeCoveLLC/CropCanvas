@@ -13,9 +13,10 @@ class ShopController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let shop = routes.grouped("shop")
         shop.get("plots", use: getShopPlots)
+        shop.put("plots", ":plot_id", use: purchasePlot)
+        
         shop.get("seeds", use: getShopSeeds)
-        shop.put("plots", "purchase", ":plot_id", use: purchasePlot)
-        shop.put("seeds", "purchase", use: purchaseSeeds)
+        shop.put("seeds", use: purchaseSeeds)
     }
     
     private func getShopPlots(_ req: Request) async throws -> ShopInventoryResponse<Shop.Plot> {
