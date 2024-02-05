@@ -28,6 +28,7 @@ final class Plot: Model, Content {
         self.id = id
         self.name = name
         self.size = size
+        self.plant = nil
         self.$owner.id = ownerID
     }
 }

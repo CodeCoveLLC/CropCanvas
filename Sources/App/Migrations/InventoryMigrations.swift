@@ -13,6 +13,7 @@ class InventoryCreationMigration: AsyncMigration {
         try await database.schema(Inventory.schema)
             .id()
             .field(Inventory.seedField, .array(of: .dictionary))
+            .field(Inventory.productField, .array(of: .dictionary))
             .field(Inventory.ownerField, .uuid, .required, .references(Profile.schema, "id"))
             .create()
     }

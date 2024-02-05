@@ -43,7 +43,7 @@ class PlotsController: RouteCollection {
         guard plot.plant == nil
         else { throw PlotError.plotBeingUsed }
         
-        guard plot.size <= plantRequest.amount
+        guard plot.size >= plantRequest.amount
         else { throw PlotError.tooManySeeds(plotSize: plot.size, requsted: plantRequest.amount) }
         
         guard plantRequest.amount > 0,
@@ -62,10 +62,9 @@ class PlotsController: RouteCollection {
             maturationDate: .now.addingTimeInterval(Double(shopPlant.growthDurationSeconds))
         )
         
+        inventory.seeds.remove(inventorySeeds)
         if inventorySeeds.amount > plantRequest.amount {
             inventory.seeds.update(with: Inventory.Seed(name: inventorySeeds.name, amount: inventorySeeds.amount - plantRequest.amount, growthDurationSeconds: inventorySeeds.growthDurationSeconds))
-        } else {
-            inventory.seeds.remove(inventorySeeds)
         }
         
         try await req.db.transaction { db in
@@ -79,8 +78,38 @@ class PlotsController: RouteCollection {
         return plant
     }
     
-    private func harvestPlot(_ req: Request) async throws -> Response {
-        return Response(status: .notImplemented)
+    private func harvestPlot(_ req: Request) async throws -> Inventory.Product {
+        let plotID = req.parameters.get("plot_id", as: UUID.self)
+        let profile = try await req.getProfile { query in
+            query.with(\.$plots)
+                .with(\.$inventory)
+        }
+        
+        guard let plot = profile.plots.first(where: { $0.id == plotID })
+        else { throw PlotError.invalidPlot }
+        
+        guard let inventory = profile.inventory
+        else { throw ServerError.unknownError }
+        
+        guard let plant = plot.plant
+        else { throw PlotError.nothingToHarvest }
+        
+        guard plant.maturationDate < .now
+        else { throw PlotError.plantNotMature(timeLeft: abs(Int(plant.maturationDate.timeIntervalSinceNow)))}
+        
+        var producedProduct = try Inventory.Product(using: plant)
+        let currentProduct = inventory.products.first(where: { $0.name == plant.name })
+        producedProduct.amount += currentProduct?.amount ?? 0
+        inventory.products.update(with: producedProduct)
+        
+        plot.plant = nil
+        
+        try await req.db.transaction { db in
+            try await plot.update(on: db)
+            try await inventory.update(on: db)
+        }
+        
+        return producedProduct
     }
     
     private struct PlantRequestBody: Content {
@@ -91,6 +120,8 @@ class PlotsController: RouteCollection {
     private enum PlotError: AbortError {
         case invalidPlot
         case plotBeingUsed
+        case nothingToHarvest
+        case plantNotMature(timeLeft: Int)
         case invalidSeedRequest
         case notEnoughSeeds(requested: Int, owned: Int)
         case tooManySeeds(plotSize: Int, requsted: Int)
@@ -101,9 +132,11 @@ class PlotsController: RouteCollection {
             switch self {
                 case .invalidPlot: "No Plot Found With Matching ID"
                 case .plotBeingUsed: "This Plot Is Already In Use"
+                case .nothingToHarvest: "There is nothing to harvest from the provided plot."
+                case .plantNotMature(let timeLeft): "The plant isn't old enough to harvest, it will be ready in \(timeLeft) seconds."
                 case .invalidSeedRequest: "Your Plant Request was Invalid. Check Plant Name Spelling, And That The Amount You Are Trying To Plant is Greater Than 0"
-                case .notEnoughSeeds(let requested, let owned): "You requested to use #\(requested) seeds, you only have #\(owned)"
-                case .tooManySeeds(let plotSize, let requested): "Your plot can only hold #\(plotSize) seeds, you requsted to use #\(requested)"
+                case .notEnoughSeeds(let requested, let owned): "You requested to use \(requested) seeds, you only have \(owned)"
+                case .tooManySeeds(let plotSize, let requested): "Your plot can only hold \(plotSize) seeds, you requsted to use \(requested)"
             }
         }
     }
