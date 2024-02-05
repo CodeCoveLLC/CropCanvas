@@ -130,11 +130,11 @@ class PlotsController: RouteCollection {
         
         var reason: String {
             switch self {
-                case .invalidPlot: "No Plot Found With Matching ID"
-                case .plotBeingUsed: "This Plot Is Already In Use"
+                case .invalidPlot: "No plot found with matching ID."
+                case .plotBeingUsed: "This plot is already in use."
                 case .nothingToHarvest: "There is nothing to harvest from the provided plot."
                 case .plantNotMature(let timeLeft): "The plant isn't old enough to harvest, it will be ready in \(timeLeft) seconds."
-                case .invalidSeedRequest: "Your Plant Request was Invalid. Check Plant Name Spelling, And That The Amount You Are Trying To Plant is Greater Than 0"
+                case .invalidSeedRequest: "Your plant request was invalid. Check seed name spelling, and that the amount you are trying to plant is greater than 0."
                 case .notEnoughSeeds(let requested, let owned): "You requested to use \(requested) seeds, you only have \(owned)"
                 case .tooManySeeds(let plotSize, let requested): "Your plot can only hold \(plotSize) seeds, you requsted to use \(requested)"
             }

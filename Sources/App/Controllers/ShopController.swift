@@ -151,10 +151,10 @@ class ShopController: RouteCollection {
         
         var reason: String {
             switch self {
-                case .unknownPlot: "Unknown Plot Provided, Check The Spelling Of The Name!"
-                case .plotAlreadyOwned: "This Plot is Already Owned By This User. You Can Only Buy Each Plot Once"
-                case .unknownSeed: "Unknown Seed Name Provided, Check The Spelling Of The Name!"
-                case .tooPoor(let amount, let balance): "You don't have enough for this purchase. Requires: $\(amount), you have: $\(balance)"
+                case .unknownPlot: "Unknown plot provided, check the ID."
+                case .plotAlreadyOwned: "You already own this plot. You can only buy each plot once."
+                case .unknownSeed: "Unknown seed name provided, check the spelling of the name!"
+                case .tooPoor(let amount, let balance): "You don't have enough for this purchase. Requires: $\(amount) | Balance: $\(balance)"
             }
         }
     }

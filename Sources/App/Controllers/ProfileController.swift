@@ -15,7 +15,7 @@ class ProfileController: RouteCollection {
         profile.post(use: createProfile)
     }
     
-    private func createProfile(_ req: Request) async throws -> TokenResponse {
+    private func createProfile(_ req: Request) async throws -> Response {
         let userInfo = try req.content.decode(UserPost.self)
         
         guard try await Profile.query(on: req.db)
@@ -32,7 +32,8 @@ class ProfileController: RouteCollection {
             try await inventory.create(on: db)
         }
         
-        return TokenResponse(token: profile.token)
+        return try await TokenResponse(name: profile.name, token: profile.token)
+            .encodeResponse(status: .created, for: req)
     }
     
     private func getProfile(_ req: Request) async throws -> Profile {
@@ -47,6 +48,7 @@ class ProfileController: RouteCollection {
     }
     
     private struct TokenResponse: Content {
+        let name: String
         let token: String
     }
     

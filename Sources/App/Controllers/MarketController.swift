@@ -36,8 +36,8 @@ class MarketController: RouteCollection {
         guard product.amount >= sellRequest.amount
         else { throw MarketError.notEnoughProduct(requested: sellRequest.amount, owned: product.amount) }
         
-        let moneyMade = sellRequest.amount * Int(Double(currentRate.baseWorth) * currentRate.marketRate)
-        profile.balance += moneyMade
+        let profit = sellRequest.amount * Int(Double(currentRate.baseWorth) * currentRate.marketRate)
+        profile.balance += profit
         
         inventory.products.remove(product)
         if product.amount > sellRequest.amount {
@@ -50,7 +50,7 @@ class MarketController: RouteCollection {
             try await profile.update(on: db)
         }
         
-        return SellSuccessBody(sold: product.name, amountMade: moneyMade)
+        return SellSuccessBody(sold: product.name, profit: profit)
     }
     
     private struct SellRequestBody: Content {
@@ -60,7 +60,7 @@ class MarketController: RouteCollection {
     
     private struct SellSuccessBody: Content {
         let sold: String
-        let amountMade: Int
+        let profit: Int
     }
     
     private enum MarketError: AbortError {
@@ -72,7 +72,7 @@ class MarketController: RouteCollection {
         var reason: String {
             switch self {
                 case .unknownProduct: "The item you are trying to sell cannot be identified. Check the spelling of the item name!"
-                case .notEnoughProduct(let requested, let owned): "You are trying to sell #\(requested) items, but only have #\(owned)"
+                case .notEnoughProduct(let requested, let owned): "You are trying to sell \(requested) items, but only have \(owned)."
             }
         }
     }
