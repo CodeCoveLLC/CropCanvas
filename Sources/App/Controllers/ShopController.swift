@@ -43,7 +43,7 @@ class ShopController: RouteCollection {
         return ShopInventoryResponse(
             balance: profile.balance,
             numberOfItems: Shop.seeds.count,
-            items: Shop.seeds
+            items: Array(Shop.seeds.values)
         )
     }
     
@@ -76,34 +76,59 @@ class ShopController: RouteCollection {
     }
     
     private func purchaseSeeds(_ req: Request) async throws -> PurchaseSuccessful<Inventory.Seed> {
-        let seedRequest = try req.content.decode(SeedRequest.self)
+        let seedRequest = try? req.content.decode(SeedRequest.self)
+        var seedsRequest = try? req.content.decode([SeedRequest].self)
         
-        guard let shopSeed = Shop.seeds.first(where: { $0.name == seedRequest.name })
-        else { throw ShopError.unknownSeed }
+        if let seedRequest {
+            seedsRequest = [seedRequest]
+        }
         
-        let profile = try await req.getProfile { query in
+        guard let seedsRequest
+        else { throw ShopError.invalidSeedsRequest }
+        
+        // Validate Seeds
+        var seeds = [Shop.Seed]()
+        var unknowns = [String]()
+        var totalItems = 0
+        
+        seedsRequest.forEach { request in
+            if let seed = Shop.seeds[request.name] {
+                seeds.append(seed)
+                totalItems += request.amount
+            } else { unknowns.append(request.name) }
+        }
+        
+        guard unknowns.isEmpty
+        else { throw ShopError.unknownSeeds(name: unknowns) }
+        
+        let profile = try await req.getProfile() { query in
             query.with(\.$inventory)
         }
         
         guard let inventory = profile.inventory
         else { throw ServerError.unknownError }
         
-        guard profile.balance >= (shopSeed.price * seedRequest.amount)
-        else { throw ShopError.tooPoor(amountNeeded: shopSeed.price * seedRequest.amount, currentBalance: profile.balance) }
+        let shopValues = zip(seeds, seedsRequest)
+        let cost = shopValues.reduce(into: 0, { $0 += ($1.0.price * $1.1.amount) })
         
-        let currentSeedCount = inventory.seeds.first(where: { $0.name == shopSeed.name })?.amount ?? 0
-        let newItem = Inventory.Seed(name: shopSeed.name, amount: currentSeedCount + seedRequest.amount, growthDurationSeconds: shopSeed.growthDurationSeconds)
-        inventory.seeds.update(with: newItem)
+        guard profile.balance >= cost
+        else { throw ShopError.tooPoor(amountNeeded: cost, currentBalance: profile.balance) }
+        
+        shopValues.forEach { seed, request in
+            let currentAmount = inventory.seeds.first(where: { $0.name == seed.name })?.amount ?? 0
+            let newItem = Inventory.Seed(name: seed.name, amount: request.amount + currentAmount, growthDurationSeconds: seed.growthDurationSeconds)
+            inventory.seeds.update(with: newItem)
+        }
         
         let oldBalance = profile.balance
-        profile.balance -= (shopSeed.price * seedRequest.amount)
+        profile.balance -= cost
         
         try await req.db.transaction { db in
             try await profile.update(on: db)
             try await inventory.update(on: db)
         }
         
-        return PurchaseSuccessful(oldBalance: oldBalance, newBalance: profile.balance, numberOfItemsPurchased: seedRequest.amount, items: [newItem])
+        return PurchaseSuccessful(oldBalance: oldBalance, newBalance: profile.balance, numberOfItemsPurchased: totalItems, items: nil)
     }
     
     private struct ShopInventoryResponse<Product: Content>: Content {
@@ -141,7 +166,8 @@ class ShopController: RouteCollection {
         case unknownPlot
         case plotAlreadyOwned
         
-        case unknownSeed
+        case unknownSeeds(name: [String])
+        case invalidSeedsRequest
         
         case tooPoor(amountNeeded: Int, currentBalance: Int)
         
@@ -153,7 +179,8 @@ class ShopController: RouteCollection {
             switch self {
                 case .unknownPlot: "Unknown plot provided, check the ID."
                 case .plotAlreadyOwned: "You already own this plot. You can only buy each plot once."
-                case .unknownSeed: "Unknown seed name provided, check the spelling of the name!"
+                case .unknownSeeds(let name): "The following seed names were not recognized, please check your spelling: \(name)"
+                case .invalidSeedsRequest: "Your purchase request for seeds was in an invalid format."
                 case .tooPoor(let amount, let balance): "You don't have enough for this purchase. Requires: $\(amount) | Balance: $\(balance)"
             }
         }

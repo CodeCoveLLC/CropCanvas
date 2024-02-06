@@ -40,13 +40,23 @@ extension Inventory {
 }
 
 extension Inventory {
-    struct Seed: Content, Hashable {
+    struct Seed: Content, Hashable, Equatable {
         let name: String
         let amount: Int
         let growthDurationSeconds: Int
         
+        var hashValue: Int {
+            var hasher = Hasher()
+            hasher.combine(name)
+            return hasher.finalize()
+        }
+        
         func hash(into hasher: inout Hasher) {
             hasher.combine(name)
+        }
+        
+        static func ==(_ lhs: Seed, _ rhs: Seed) -> Bool {
+            return lhs.name == rhs.name
         }
         
         enum CodingKeys: String, CodingKey {

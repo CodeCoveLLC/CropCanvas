@@ -47,7 +47,7 @@ class PlotsController: RouteCollection {
         else { throw PlotError.tooManySeeds(plotSize: plot.size, requsted: plantRequest.amount) }
         
         guard plantRequest.amount > 0,
-              let shopPlant = Shop.seeds.first(where: { $0.name == plantRequest.name })
+              let shopPlant = Shop.seeds[plantRequest.name]
         else { throw PlotError.invalidSeedRequest }
         
         let inventorySeeds = inventory.seeds.first(where: { $0.name == plantRequest.name })
