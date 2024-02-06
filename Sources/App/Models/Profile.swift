@@ -45,7 +45,7 @@ extension Profile {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
-        try container.encode(balance, forKey: .money)
+        try container.encode(balance, forKey: .balance)
         try container.encode(plots, forKey: .plots)
         try container.encodeIfPresent(inventory, forKey: .inventory)
     }
@@ -54,7 +54,7 @@ extension Profile {
         case id
         case token
         case name
-        case money
+        case balance
         case plots
         case inventory
     }

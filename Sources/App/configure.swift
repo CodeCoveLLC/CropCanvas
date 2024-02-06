@@ -4,9 +4,7 @@ import FluentPostgresDriver
 import Vapor
 
 // configures your application
-public func configure(_ app: Application) async throws {
-    // uncomment to serve files from /Public folder
-    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+public func configure(_ app: Application) async throws {     
     
     if let url = Environment.get("DATABASE_URL") {
         try app.databases.use(DatabaseConfigurationFactory.postgres(url: url), as: .psql)
@@ -19,6 +17,7 @@ public func configure(_ app: Application) async throws {
     // MARK: Replaces Error Middleware | Could Cause Issues | Explore More
     app.middleware = .init()
     app.middleware.use(ErrorHandlingMiddleware())
+    app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     
     app.migrations.add(ProfileCreationMigration())
     app.migrations.add(PlotCreationMigration())
