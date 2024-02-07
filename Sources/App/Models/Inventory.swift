@@ -74,32 +74,32 @@ extension Inventory {
         init(using plant: Plot.Plant) throws {
             self.amount = plant.amount
             switch plant.name {
-                case "Raspberry Seeds":
-                    self.name = "Raspberries"
+                case "Pomegranate Seeds":
+                    self.name = "Pomegranates"
                     self.baseWorth = 105
-                case "Strawberry Seeds":
-                    self.name = "Strawberries"
+                case "Potato Seeds":
+                    self.name = "Potatoes"
                     self.baseWorth = 145
-                case "Wheat Seeds":
-                    self.name = "Wheat"
+                case "Pepper Seeds":
+                    self.name = "Peppers"
                     self.baseWorth = 175
-                case "Carrot Seeds":
-                    self.name = "Carrots"
+                case "Cauliflower Seeds":
+                    self.name = "Cauliflower"
                     self.baseWorth = 210
-                case "Bell Pepper Seeds":
-                    self.name = "Bell Peppers"
-                    self.baseWorth = 240
-                case "Lettuce Seeds":
-                    self.name = "Lettuce"
-                    self.baseWorth = 275
-                case "Cucumber Seeds":
-                    self.name = "Cucumbers"
-                    self.baseWorth = 315
                 case "Pumpkin Seeds":
                     self.name = "Pumpkins"
+                    self.baseWorth = 240
+                case "Carrot Seeds":
+                    self.name = "Carrots"
+                    self.baseWorth = 275
+                case "Wheat Seeds":
+                    self.name = "Wheat"
+                    self.baseWorth = 315
+                case "Blueberry Seeds":
+                    self.name = "Blueberries"
                     self.baseWorth = 400
-                case "Watermelon Seeds":
-                    self.name = "Watermelons"
+                case "Melon Seeds":
+                    self.name = "Melons"
                     self.baseWorth = 495
                 case "Corn Seeds":
                     self.name = "Corn"
