@@ -46,8 +46,8 @@ extension Request {
         var status: HTTPResponseStatus { .unauthorized }
         var reason: String {
             switch self {
-                case .noTokenFound: "No Bearer Token Found"
-                case .noProfileFound: "No Profile With Matching Token Found"
+                case .noTokenFound: "No bearer token was provided."
+                case .noProfileFound: "No profile with a matching token was found."
             }
         }
     }

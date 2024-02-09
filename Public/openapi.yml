@@ -1,0 +1,801 @@
+openapi: '3.0.2'
+info:
+  title: Crop Canvas API Reference
+  version: '1.0'
+servers:
+  - url: https://cropcanvas.com
+paths:
+  /profile:
+    post:
+      summary: Create A Profile
+      description: Creates a profile using the information given through the request body.
+      operationId: createProfile
+      
+      tags:
+        - Profile
+      requestBody:
+        description: A description of the profile you want to create.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileCreationRequestBody'
+              example:
+                name: Farmer John
+      
+      responses:
+        '201':
+          description: A response containing the created Token for the profile. Be careful not to lose or share this information as it is how you access your account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileCreationSuccess'
+              example:
+                name: Farmer John
+                token: FAKETOKENDONTUSE264900ACF000F7305CA53FDF394D42F3AB7F1A33DCB5D0E64435FB4FEE7918AF89278367D0181E1C466C848A9767A57173833CA049E7F7B4
+        
+        '401':
+          description: An error displaying that your profile could not be created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 401
+                reason: "Username already taken."
+
+    get:
+      summary: Get Profile Information
+      description: Retrieves the profile of the authenticated user.
+      operationId: getProfile
+      tags:
+        - Profile
+      security:
+        - profileAuth: []
+      
+      responses:
+        '200':
+          description: The profile information of the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+              example:  
+                name: Farmer John
+                balance: 1000
+                plots:
+                  - id: C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
+                    name: Green Meadows
+                    size: 10
+                    plant:
+                      name: Carrot
+                      amount: 5
+                      planted_date: 2024-02-09T02:06:48Z
+                      maturation_date: 2024-02-09T02:17:38Z
+                  - id: G67FAFDB-1461-4EBB-9D6C-8DD2EDFBD8UG
+                    name: Moonlight Range
+                    size: 5
+                inventory:
+                  seeds:
+                    Potato Seeds:
+                      amount: 10
+                      growth_duration_seconds: 650
+                  products:
+                    Blueberries:
+                      amount: 5
+                      base_worth: 400
+
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+  /plots:
+    get:
+      summary: Get Owned Plots
+      description: Retrieves the plots owned by the authenticated user.
+      operationId: getPlots
+      security:
+        - profileAuth: []
+      tags:
+        - Plots
+      responses:
+        '200':
+          description: The plots owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plot'
+              example:
+                - id: C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
+                  name: Green Meadows
+                  size: 10
+                  plant:
+                    name: Carrot
+                    amount: 5
+                    planted_date: 2024-02-09T02:06:48Z
+                    maturation_date: 2024-02-09T02:17:38Z
+                - id: G67FAFDB-1461-4EBB-9D6C-8DD2EDFBD8UG
+                  name: Moonlight Range
+                  size: 5
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+  /plots/plant/{plotId}:
+    post:
+      summary: Plant Seeds
+      description: Plants seeds on the specified plot.
+      operationId: plantSeeds
+      security:
+        - profileAuth: []
+      tags:
+        - Plots
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          description: The unique identifier for the plot you want to plant seeds on.
+          schema:
+            type: string
+            format: uuid
+          example:
+            C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
+      
+      requestBody:
+        description: The seeds you want to plant on the plot.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeedRequest'
+              example:
+                name: Blueberry Seeds
+                amount: 25
+      
+      responses:
+        '200':
+          description: The information about the newly planted seeds.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plot Plant'
+              example:
+                name: Blueberry Seeds
+                amount: 25
+                planted_date: 2024-02-05T06:34:25.842Z
+                maturation_date: 2024-02-05T08:25:13.838Z
+
+        '400':
+          description: An error displaying that the plant request was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Invalid Plot:
+                  value: 
+                    status: 400 
+                    reason: "No plot found with matching ID."
+                Plot In Use:
+                  value:
+                    status: 400
+                    reason: "This plot is already in use."
+                Invalid Seeds:
+                  value:
+                    status: 400
+                    reason: "Your plant request was invalid. Check seed name spelling and that the amount you are trying to plant is greater than 0."
+                Too Many Seeds:
+                  value:
+                    status: 400
+                    reason: "Your plot can only hold 10 seeds, you requested to use 25."
+                Not Enough Seeds:
+                  value:
+                    status: 400
+                    reason: "You requested to use 25 seeds, but you only have 10."
+
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /plots/harvest/{plotId}:
+    post:
+      summary: Harvest Seeds
+      description: Harvests the seeds from the specified plot.
+      operationId: harvestSeeds
+      security:
+        - profileAuth: []
+      tags:
+        - Plots
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          description: The unique identifier for the plot you want to harvest seeds from.
+          schema:
+            type: string
+            format: uuid
+          example:
+            C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
+      
+      responses:
+        '200':
+          description: Information about what was harvested from the plot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryProduct'
+              example:
+                name: Blueberries
+                amount: 25
+                base_worth: 400
+
+        '400':
+          description: An error displaying that the harvest request was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Invalid Plot:
+                  value: 
+                    status: 400 
+                    reason: "No plot found with matching ID."
+                No Seeds:
+                  value:
+                    status: 400
+                    reason: "There is nothing to harvest from the provided plot."
+                Not Ready:
+                  value:
+                    status: 400
+                    reason: "The plant isn't old enough to harvest, it will be ready in 200 seconds."
+
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /shop/plots:
+    get:
+      summary: Get Available Plots
+      description: Retrieves the plots available for purchase.
+      operationId: getAvailablePlots
+      security:
+        - profileAuth: []
+      tags:
+        - Shop
+      responses:
+        '200':
+          description: The plots available for purchase.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+                    description: The amount of money the profile has.
+                  number_of_items:
+                    type: integer
+                    description: The number of plots available for purchase.
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShopPlot'
+              example:
+                balance: 1000
+                number_of_items: 3
+                plots:
+                  - id: C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
+                    name: Moonlight Range
+                    size: 5
+        
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+  /shop/plots/{plotId}:
+    put:
+      summary: Purchase Plot
+      description: Purchases the specified plot.
+      operationId: purchasePlot
+      security:
+        - profileAuth: []
+      tags:
+        - Shop
+      parameters:
+        - in: path
+          name: plotId
+          required: true
+          description: The unique identifier for the plot you want to purchase.
+          schema:
+            type: integer
+          example: 1
+      
+      responses:
+        '200':
+          description: Information about the plot that was purchased.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  old_balance:
+                    type: integer
+                    description: The amount of money the profile had before the purchase.
+                  new_balance:  
+                    type: integer
+                    description: The amount of money the profile has after the purchase.
+                  number_of_items_purchased:
+                    type: integer
+                    description: The number of plots purchased.
+                  items:
+                    $ref: '#/components/schemas/Plot'
+              example:
+                old_balance: 1000
+                new_balance: 500
+                number_of_items_purchased: 1
+                items:
+                  id: C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
+                  name: Green Meadows
+                  price: 500
+                  size: 10
+
+        '400':
+          description: An error displaying that the purchase request was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Invalid Plot:
+                  value: 
+                    status: 400 
+                    reason: "Unknown plot provided, check the ID."
+                Plot Already Owned:
+                  value:
+                    status: 400
+                    reason: "You already own this plot. You can only buy each plot once."
+                Too Poor:
+                  value:
+                    status: 400
+                    reason: "You don't have enough money to purchase this plot."
+
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /shop/seeds:
+    get:
+      summary: Get Available Seeds
+      description: Retrieves the seeds available for purchase.
+      operationId: getAvailableSeeds
+      security:
+        - profileAuth: []
+      tags:
+        - Shop
+      responses:
+        '200':
+          description: The seeds available for purchase.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+                    description: The amount of money the profile has.
+                  number_of_items:
+                    type: integer
+                    description: The number of seeds available for purchase.
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ShopSeed'
+              example:
+                balance: 1000
+                number_of_items: 2
+                seeds:
+                  - name: Potato Seeds
+                    price: 45
+                    growth_duration_seconds: 650
+                  - name: Blueberry Seeds
+                    price: 80
+                    growth_duration_seconds: 1000
+        
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+    put:
+      summary: Purchase Seeds
+      description: Purchases the specified seeds.
+      operationId: purchaseSeeds
+      tags:
+        - Shop
+
+      requestBody:
+        description: The seeds you want to plant on the plot.
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/SeedRequest'
+                  example:
+                    name: Blueberry Seeds
+                    amount: 25
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/SeedRequest'
+                  example:
+                    - name: Blueberry Seeds
+                      amount: 25
+                    - name: Potato Seeds
+                      amount: 10
+      
+      responses:
+        '200':
+          description: Information about the seeds that were purchased.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  old_balance:
+                    type: integer
+                    description: The amount of money the profile had before the purchase.
+                  new_balance:  
+                    type: integer
+                    description: The amount of money the profile has after the purchase.
+                  number_of_items_purchased:
+                    type: integer
+                    description: The number of seeds purchased.
+                  items:
+                    $ref: '#/components/schemas/InventorySeed'
+              example:
+                old_balance: 1000
+                new_balance: 500
+                number_of_items_purchased: 25
+                items:
+                  name: Blueberry Seeds
+                  amount: 25
+                  growth_duration_seconds: 1000
+
+        '400':
+          description: An error displaying that the purchase request was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Invalid Seed:
+                  value: 
+                    status: 400 
+                    reason: "The following seed names were not recognized, please check your spelling: Bluberri Seeds"
+                Invalid Seed Request:
+                  value:
+                    status: 400
+                    reason: "Your purchase request for seeds was in an invalid format. "
+                Too Poor:
+                  value:
+                    status: 400
+                    reason: "You don't have enough money to purchase this many seeds."
+
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /market:
+    get:
+      summary: Get Market Rates
+      description: Retrieves the current market rates.
+      operationId: getMarket
+      tags:
+        - Market
+      responses:
+        '200':
+          description: The current market rates.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarketRate'
+              example:
+                - name: Blueberries
+                  base_worth: 400
+                  market_rate: 1.0
+                - name: Potatoes
+                  base_worth: 145
+                  market_rate: 1.0
+
+    put:
+      summary: Sell Product To Market
+      description: Sells the specified product to the market.
+      operationId: sellProduct
+      security:
+        - profileAuth: []
+      tags:
+        - Market
+
+      requestBody:
+        description: The product you want to sell to the market.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketRequest'
+              example:
+                name: Blueberries
+                amount: 25
+              required:
+                - name
+                - amount
+
+      responses:
+        '200':
+          description: Information about the product that was sold to the market.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sold:
+                    type: string
+                    description: The name of the product that was sold.
+                  profit:
+                    type: integer
+                    description: The amount of money the profile made from the sale.
+              example:
+                sold: Blueberries
+                profit: 1000
+
+        '400':
+          description: An error displaying that the sale request was invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Invalid Product:
+                  value: 
+                    status: 400 
+                    reason: "The item you are trying to sell cannot be identified. Check the spelling of the item name!"
+                Not Enough Product:
+                  value:
+                    status: 400
+                    reason: "You are trying to sell 25 Blueberries, but you only have 10."
+
+        '401':
+          $ref: '#/components/responses/CouldntAccessProfile'
+
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    profileAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    ProfileCreationRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name for the profile you want to create. Must be unique.
+      required:
+        - name
+
+    ProfileCreationSuccess:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the profile that was created.
+        token:
+          type: string
+          description: The unique token used to access and control this profile.
+
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the profile.
+        balance:
+          type: integer
+          description: The amount of money the profile has.
+        plots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plot'
+        inventory:
+          $ref: '#/components/schemas/Inventory'
+
+    Plot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier for this plot.
+        name: 
+          type: string
+          description: The name of the plot.
+        size:
+          type: integer
+          description: The number of seeds that can be planted on this plot.
+        plant:
+          type: object
+          nullable: true
+          $ref: '#/components/schemas/Plot Plant'
+
+    Plot Plant:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the plant that is currently planted on this plot.
+        amount:
+          type: integer
+          description: The amount of seeds that are currently planted on this plot.
+        planted_date:
+          type: string
+          format: date
+          description: The date the plant was planted.
+        maturation_date:
+          type: string
+          format: date
+          description: The date the plant will be ready to harvest.
+        
+    Inventory:
+      type: object
+      properties:
+        seeds:
+          type: array
+          description: A list of seeds the profile has.
+          items:
+            $ref: '#/components/schemas/InventorySeed'
+
+        products:
+          type: array
+          description: A list of products the profile has.
+          items:
+            $ref: '#/components/schemas/InventoryProduct'
+
+    InventorySeed:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the seed.
+        amount:
+          type: integer
+          description: The amount of this seed the profile has.
+        growth_duration_seconds:
+          type: integer
+          description: The amount of time it takes for the seed to grow in seconds.
+
+    InventoryProduct:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the product.
+        amount:
+          type: integer
+          description: The amount of this product the profile has.
+        base_worth:
+          type: integer
+          description: The base worth of this product.
+
+    ShopPlot:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for this plot.
+        name: 
+          type: string
+          description: The name of the plot.
+        price:
+          type: integer
+          description: The price of the plot.
+        size:
+          type: integer
+          description: The number of seeds that can be planted on this plot.
+
+    ShopSeed:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the seed.
+        price:
+          type: integer
+          description: The price of the seed.
+        growth_duration_seconds:
+          type: integer
+          description: The amount of time it takes for the seed to grow in seconds.
+
+    SeedRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the seed you want to reference.
+        amount:
+          type: integer
+          description: The amount of seeds.
+      required:
+        - name
+        - amount
+
+    MarketRate:
+      type: object
+      properties:
+        name: 
+          type: string
+          description: The name of the product.
+        base_worth:
+          type: integer
+          description: The base worth of this product.
+        market_rate:
+          type: number
+          format: decimal
+          description: The current market rate of this product.
+          
+    MarketRequest:
+        type: object
+        properties:
+            name:
+              type: string
+              description: The name of the product you are trying to sell.
+            amount:
+              type: integer
+              description: The amount of the product you are trying to sell.
+            
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code this error represents.
+        reason:
+          type: string
+          description: A short description of the error.
+    
+  responses:
+    ServerError:
+      description: An error displaying that an unknown error caused the server to not process the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 500 
+            reason: "An Unknown Error Occurred"
+    
+    CouldntAccessProfile:
+      description: An error displaying that the profile could not be accessed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            profileNotFound:
+              value: 
+                status: 401 
+                reason: "No profile with a matching token found."
+            missingToken:
+              value:
+                status: 401
+                reason: "No bearer token was provided."
