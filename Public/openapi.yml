@@ -3,7 +3,7 @@ info:
   title: Crop Canvas API Reference
   version: '1.0'
 servers:
-  - url: https://cropcanvas.com
+  - url: https://cropcanvas.dev
 paths:
   /profile:
     post:
