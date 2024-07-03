@@ -37,9 +37,13 @@ class ProfileController: RouteCollection {
     }
     
     private func getProfile(_ req: Request) async throws -> Profile {
-        try await req.getProfile { query in
-            query.with(\.$plots)
-                .with(\.$inventory)
+        let includePlots = (try? req.query.get(Bool.self, at: "include_plots")) ?? false
+        let includeInventory = (try? req.query.get(Bool.self, at: "include_inventory")) ?? false
+        
+        return try await req.getProfile { query in
+            query
+                .with(\.$plots, when: includePlots)
+                .with(\.$inventory, when: includeInventory)
         }
     }
     
@@ -68,3 +72,5 @@ class ProfileController: RouteCollection {
         }
     }
 }
+
+

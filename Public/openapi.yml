@@ -52,6 +52,21 @@ paths:
         - Profile
       security:
         - profileAuth: []
+      parameters:
+        - in: query
+          name: include_plots
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: If the users owned plots should be included in the response.
+        - in: query
+          name: include_inventory
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: If the users inventory should be included in the response.
       
       responses:
         '200':
@@ -613,10 +628,12 @@ components:
           type: integer
           description: The amount of money the profile has.
         plots:
+          nullable: true
           type: array
           items:
             $ref: '#/components/schemas/Plot'
         inventory:
+          nullable: true
           $ref: '#/components/schemas/Inventory'
 
     Plot:

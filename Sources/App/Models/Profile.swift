@@ -8,7 +8,6 @@
 import Vapor
 import Fluent
 
-
 final class Profile: Model, Content {
     @ID(key: .id)
     var id: UUID?
@@ -46,8 +45,8 @@ extension Profile {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
         try container.encode(balance, forKey: .balance)
-        try container.encode(plots, forKey: .plots)
-        try container.encodeIfPresent(inventory, forKey: .inventory)
+        try container.encodeIfPresent($plots.value, forKey: .plots)
+        try container.encodeIfPresent($inventory.value, forKey: .inventory)
     }
     
     enum CodingKeys: String, CodingKey {
