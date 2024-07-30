@@ -99,7 +99,10 @@ class PlotsController: RouteCollection {
         
         var producedProduct = try Inventory.Product(using: plant)
         let currentProduct = inventory.products.first(where: { $0.name == plant.name })
-        producedProduct.amount += currentProduct?.amount ?? 0
+        if let currentProduct {
+            producedProduct.amount += currentProduct.amount
+            inventory.products.remove(currentProduct)
+        }
         inventory.products.update(with: producedProduct)
         
         plot.plant = nil
