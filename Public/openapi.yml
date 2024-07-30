@@ -302,7 +302,7 @@ paths:
               example:
                 balance: 1000
                 number_of_items: 3
-                plots:
+                items:
                   - id: C90FCFDB-1461-4EBB-9D6C-8DD2EDFBD5FC
                     name: Moonlight Range
                     size: 5
@@ -413,7 +413,7 @@ paths:
               example:
                 balance: 1000
                 number_of_items: 2
-                seeds:
+                items:
                   - name: Potato Seeds
                     price: 45
                     growth_duration_seconds: 650
@@ -432,7 +432,7 @@ paths:
         - Shop
 
       requestBody:
-        description: The seeds you want to plant on the plot.
+        description: The seeds you want to purchase.
         required: true
         content:
           application/json:
