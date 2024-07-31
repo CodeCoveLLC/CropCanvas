@@ -42,7 +42,7 @@ class MarketController: RouteCollection {
         inventory.products.remove(product)
         if product.amount > sellRequest.amount {
             product.amount -= sellRequest.amount
-            inventory.products.update(with: product )
+            inventory.products.insert(product)
         }
         
         try await req.db.transaction { db in

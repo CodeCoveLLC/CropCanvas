@@ -98,12 +98,12 @@ class PlotsController: RouteCollection {
         else { throw PlotError.plantNotMature(timeLeft: abs(Int(plant.maturationDate.timeIntervalSinceNow)))}
         
         var producedProduct = try Inventory.Product(using: plant)
-        let currentProduct = inventory.products.first(where: { $0.name == plant.name })
+        let currentProduct = inventory.products.first(where: { $0.name == producedProduct.name })
         if let currentProduct {
             producedProduct.amount += currentProduct.amount
             inventory.products.remove(currentProduct)
         }
-        inventory.products.update(with: producedProduct)
+        inventory.products.insert(producedProduct)
         
         plot.plant = nil
         
